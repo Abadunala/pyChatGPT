@@ -394,3 +394,42 @@ class ChatGPT:
         '''
         self.__verbose_print('Resetting conversation')
         self.driver.find_element(By.LINK_TEXT, 'New Thread').click()
+    
+    def retry_conversation(self) -> None:
+        '''
+        Retry the conversation
+        '''
+        # Ensure that the Cloudflare cookies is still valid
+        self.__verbose_print('[send_msg] Ensuring Cloudflare cookies')
+        self.__ensure_cf()
+
+        # Click retry button 
+        self.__verbose_print('Retrying conversation')
+        self.driver.find_element(By.LINK_TEXT, 'Try again').click()
+
+        # Wait for the response to be ready
+        self.__verbose_print('[send_msg] Waiting for completion')
+        WebDriverWait(self.driver, 90).until_not(
+            EC.presence_of_element_located((By.CLASS_NAME, 'result-streaming'))
+        )
+
+        # Get the response element
+        self.__verbose_print('[send_msg] Finding response element')
+        response = self.driver.find_elements(
+            By.XPATH, "//div[starts-with(@class, 'request-:')]"
+        )[-1]
+
+        # Check if the response is an error
+        self.__verbose_print('[send_msg] Checking if response is an error')
+        if 'text-red' in response.get_attribute('class'):
+            self.__verbose_print('[send_msg] Response is an error')
+            raise ValueError(response.text)
+        self.__verbose_print('[send_msg] Response is not an error')
+
+        # Return the response
+        return {
+            'message': markdownify.markdownify(response.get_attribute('innerHTML')),
+            'conversation_id': '',
+            'parent_id': '',
+        }
+
