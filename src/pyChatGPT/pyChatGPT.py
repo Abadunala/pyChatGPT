@@ -425,7 +425,11 @@ class ChatGPT:
 
         # Click retry button 
         self.__verbose_print('Retrying conversation')
-        self.driver.find_element(By.LINK_TEXT, 'Try again').click()
+
+        try:
+            self.driver.find_element(By.LINK_TEXT, 'Try again').click()
+        except SeleniumExceptions.NoSuchElementException:
+            raise ValueError("'Can't find 'Try again' button")
 
         # Wait for the response to be ready
         self.__verbose_print('[send_msg] Waiting for completion')
